@@ -1,17 +1,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
-#include <jmorecfg.h>
 #include <sys/time.h>
 
-#define N 4
-#define REPEAT 1
-#define BLOCK 2
+#define N 3000
+#define REPEAT 10
 
 int A[N][N], B[N][N], C[N][N];
 
-int trace = 1;
-int debug = 1;
+int trace = 0;
+int debug = 0;
 int info = 1;
 
 void print_all_matrix() {
@@ -90,19 +88,25 @@ void cache_blocking(int block_size){
         }
         return;
     }
+
     int rest = N % block_size;
-    for (i = 0; i < N-rest; i+=BLOCK) {
-        for (j = 0; j < N-rest; j+=BLOCK) {
-            for (k = 0; k < N-rest; k+=BLOCK) {
-                for (int ii = i; ii < i+BLOCK; ++ii) {
-                    for (int jj = j; jj < j+BLOCK; ++jj) {
-                        for (int kk = k; kk < k+BLOCK; ++kk) {
-                            C[ii][jj] += A[ii][kk] * B[kk][jj];
+    for (i = 0; i < N-rest; i+=block_size) {
+        for (k = 0; k < N-rest; k+=block_size) {
+            for (j = 0; j < N-rest; j+=block_size) {
+                for (int ii = i; ii < i+block_size; ++ii) {
+                    for (int kk = k; kk < k+block_size; ++kk) {
+                        for (int jj = j; jj < j+block_size; ++jj) {
+                            // TODO: if debugをリファクタリング，見やすくする．
                             if (debug){
                                 printf("debug: block_size:%d, rest: %d, i:%d, j;%d, k:%d, ii:%d, jj:%d, kk:%d\n"
                                        ,block_size, rest, i, j, k, ii,jj,kk);
-                                printf("debug: C[%d][%d] += A[%d][%d]:%d * B[%d][%d]:%d\n"
-                                       , ii, jj, ii, kk, A[ii][kk], kk, jj, B[kk][jj]);
+                                printf("debug: A[%d][%d]:%d * B[%d][%d]:%d = %d, C[%d][%d]:%d >> %d\n"
+                                        , ii, kk, A[ii][kk]
+                                        , kk, jj, B[kk][jj], A[ii][kk]*B[kk][jj]
+                                        , ii, jj,C[ii][jj], A[ii][kk]*B[kk][jj]+C[ii][jj]);
+                            }
+                            C[ii][jj] += A[ii][kk] * B[kk][jj];
+                            if (debug){
                                 print_all_matrix();
                             }
                         }
@@ -135,14 +139,14 @@ int main() {
         double sub_time = end - start;
         total_time += sub_time;
         clear_cache();
-        if (info) printf("start-end: %lf [sec]\n", sub_time);
+        if (info) printf("%02dth: %lf [sec]\n", i+1, sub_time);
     }
 
     for (int j = 2; j < 10; ++j) {
-        //cache_blocking(j);
+        // TODO: this loop is executing N_cache_blocking(N)
+        //cache_blocking(j)
         //clear_cache();
     }
-    //cache_blocking(2);
 
     double average_time = total_time / (double)REPEAT;
     printf("average execute time: %lf [sec]\n", average_time);
