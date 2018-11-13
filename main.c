@@ -3,13 +3,13 @@
 #include <time.h>
 #include <sys/time.h>
 
-#define N 3000
+#define N 5
 #define REPEAT 10
 
 int A[N][N], B[N][N], C[N][N];
 
 int trace = 0;
-int debug = 0;
+int debug = 1;
 int info = 1;
 
 void print_all_matrix() {
@@ -80,6 +80,41 @@ void exec_ikj(){
     }
 }
 
+void exec_rest_matrix(int rest){
+    if (rest < 1) return;
+
+    int resumption_point;
+    resumption_point = N - rest;
+    int block_size = rest;
+
+    for (int i = resumption_point; i < N; i+=block_size) {
+        for (int k = resumption_point; k < N; k+=block_size) {
+            for (int j = resumption_point; j < N; j+=block_size) {
+                for (int ii = i; ii < N; ++ii) {
+                    for (int kk = k; kk < N; ++kk) {
+                        for (int jj = j; jj < N; ++jj) {
+                            if (debug){
+                                printf("debug: block_size:%d, rest: %d, i:%d, j;%d, k:%d, ii:%d, jj:%d, kk:%d\n"
+                                        ,block_size, rest, i, j, k, ii,jj,kk);
+                                printf("debug: A[%d][%d]:%d * B[%d][%d]:%d = %d, C[%d][%d]:%d >> %d\n"
+                                        , ii, kk, A[ii][kk]
+                                        , kk, jj, B[kk][jj], A[ii][kk]*B[kk][jj]
+                                        , ii, jj,C[ii][jj], A[ii][kk]*B[kk][jj]+C[ii][jj]);
+                            }
+                            C[ii][jj] += A[ii][kk] * B[kk][jj];
+                            if (debug){
+                                printf("exec_rest_matrix\n");
+                                print_all_matrix();
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+}
+
 void cache_blocking(int block_size){
     int i = 0, j = 0 , k = 0;
     if (block_size < 2){
@@ -122,13 +157,20 @@ void cache_blocking(int block_size){
         printf("trace: executed N broking\n");
         print_all_matrix();
     }
+    if (rest>0){
+        exec_rest_matrix(rest);
+    }
 }
+
+
 
 int main() {
     srand((unsigned int) time(NULL));
 
     init_matrix();
 
+    //// exec_rest_matrix(2);
+    //return 0;
 
     double total_time = 0;
     for (int i = 0; i < REPEAT; ++i) {
